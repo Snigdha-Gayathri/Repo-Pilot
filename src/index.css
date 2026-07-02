@@ -1,0 +1,87 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-ink-950 text-ink-100 antialiased;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+  ::selection {
+    @apply bg-brand-500/30 text-white;
+  }
+}
+
+@layer components {
+  .glass {
+    @apply bg-ink-900/70 backdrop-blur-xl border border-white/[0.06];
+  }
+  .card {
+    @apply glass rounded-2xl shadow-card;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-primary {
+    @apply btn bg-brand-500 text-white hover:bg-brand-400 shadow-glow hover:-translate-y-px;
+  }
+  .btn-ghost {
+    @apply btn text-ink-200 hover:text-white hover:bg-white/[0.06];
+  }
+  .btn-outline {
+    @apply btn border border-white/10 text-ink-100 hover:bg-white/[0.06] hover:border-white/20;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium;
+  }
+  .input {
+    @apply w-full rounded-xl bg-ink-850 border border-white/10 px-4 py-3 text-ink-100 placeholder-ink-400 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-500/20;
+  }
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.12) transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.12);
+    border-radius: 9999px;
+  }
+}
+
+/* diff2html overrides for dark theme */
+.d2h-wrapper {
+  background: transparent !important;
+}
+.d2h-file-header {
+  background: rgba(255,255,255,0.03) !important;
+  border-color: rgba(255,255,255,0.08) !important;
+  color: #dde3f3 !important;
+}
+.d2h-file-name, .d2h-file-stats { color: #dde3f3 !important; }
+.d2h-code-linenumber, .d2h-code-side-linenumber {
+  background: rgba(255,255,255,0.02) !important;
+  border-color: rgba(255,255,255,0.06) !important;
+  color: #5a6690 !important;
+}
+.d2h-code-line, .d2h-code-side-line {
+  background-color: #0b1020 !important;
+  color: #b8c0db !important;
+}
+.d2h-ins {
+  background-color: rgba(16,185,129,0.12) !important;
+}
+.d2h-del {
+  background-color: rgba(244,63,94,0.12) !important;
+}
+.d2h-ins .d2h-code-line-ctn, .d2h-code-side-line .d2h-ins { color: #6ee7b7 !important; }
+.d2h-del .d2h-code-line-ctn, .d2h-code-side-line .d2h-del { color: #fda4af !important; }
+.d2h-info { background-color: rgba(255,255,255,0.04) !important; color: #8b95b8 !important; border-color: rgba(255,255,255,0.06) !important; }
+.d2h-file-diff { border-color: rgba(255,255,255,0.08) !important; }

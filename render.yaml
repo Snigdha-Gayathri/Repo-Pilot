@@ -1,0 +1,16 @@
+# Render static-site deployment for RepoPilot AI frontend.
+# Create a "Static Site" on Render and point it at this repo.
+services:
+  - type: web
+    name: repopilot-ai
+    runtime: static
+    buildCommand: npm run build
+    staticPublishPath: ./dist
+    pullRequestPreviewsEnabled: false
+    envVars:
+      - key: NODE_VERSION
+        value: 20.0.0
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
