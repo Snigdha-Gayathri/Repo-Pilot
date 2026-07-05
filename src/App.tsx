@@ -66,7 +66,7 @@ export default function App() {
           </button>
           <nav className="flex items-center gap-1.5">
             <a
-              href="https://github.com/Snigdha-Gayathri/RepoPilot-AI"
+              href="https://github.com/Snigdha-Gayathri/Repo-Pilot"
               target="_blank"
               rel="noreferrer"
               className="btn-ghost"
