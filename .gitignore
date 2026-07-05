@@ -1,3 +1,6 @@
+# Bolt.new editor artifacts
+.bolt
+
 logs
 *.log
 npm-debug.log*
