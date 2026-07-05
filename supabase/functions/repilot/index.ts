@@ -96,7 +96,33 @@ async function geminiJSON<T>(prompt: string, system?: string): Promise<T> {
   const raw = await gemini(prompt, system);
   // Strip code fences if present
   const cleaned = raw.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
-  return JSON.parse(cleaned) as T;
+
+  // First try a direct parse
+  try {
+    return JSON.parse(cleaned) as T;
+  } catch (_) {
+    // Gemini sometimes emits invalid escape sequences inside JSON string values
+    // (e.g. \$ \: \/ that are not valid JSON escapes). Fix them by scanning
+    // only inside JSON string literals and removing unknown escapes.
+    const fixed = cleaned.replace(
+      /"((?:[^"\\]|\\[\s\S])*)"/g,
+      (_match: string, inner: string) => {
+        // Replace any backslash NOT followed by a valid JSON escape character
+        const sanitized = inner.replace(/\\([^"\\/bfnrtu])/g, "$1");
+        return `"${sanitized}"`;
+      }
+    );
+    try {
+      return JSON.parse(fixed) as T;
+    } catch (_2) {
+      // Last resort: extract the outermost { } or [ ] block and try again
+      const objMatch = fixed.match(/(\{[\s\S]*\}|\[[\s\S]*\])/);
+      if (objMatch) {
+        return JSON.parse(objMatch[1]) as T;
+      }
+      throw new Error(`Gemini returned unparseable JSON: ${cleaned.slice(0, 200)}`);
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -462,7 +488,14 @@ ${relevantFiles || "(files not fetched — infer from tree)"}
 
 Produce a unified diff in standard git format. Each hunk header must use \`--- a/path\` and \`+++ b/path\` with @@ line markers. Only modify files necessary for this fix. Do not invent file contents — base changes on the provided files.
 
-Return JSON: { "approach": "${strategy.approach}", "diff": "the full unified diff string", "files": ["paths touched"], "notes": "brief explanation of what changed and why" }`;
+IMPORTANT: The diff string will be embedded in JSON. You MUST properly escape all special characters inside the JSON string value:
+- Newlines must be \\n (two characters: backslash + n)
+- Tabs must be \\t
+- Backslashes must be \\\\ (four characters in source, two in JSON)
+- Double quotes inside the diff must be \\"
+Do NOT use actual newline characters inside the JSON string value.
+
+Return JSON: { "approach": "${strategy.approach}", "diff": "the full unified diff as a single escaped string", "files": ["paths touched"], "notes": "brief explanation of what changed and why" }`;
     const result = await geminiJSON<any>(prompt, SYSTEM_BASE);
     await finishEvent(supa, evId, "done", { files: result.files }, startedAt);
     return result;
