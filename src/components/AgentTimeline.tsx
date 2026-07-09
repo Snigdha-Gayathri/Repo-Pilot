@@ -61,7 +61,7 @@ export function AgentTimeline({ events }: { events: AgentEvent[] }) {
 }
 
 function TimelineRow({ event, isLast }: { event: AgentEvent; isLast: boolean }) {
-  const meta = AGENT_META[event.agent as AgentName] ?? AGENT_META.repository_analyst;
+  const meta = AGENT_META[event.agent as AgentName] ?? AGENT_META.intake;
   const Icon = ICONS[meta.icon] ?? Compass;
   const statusIcon =
     event.status === "running" ? (

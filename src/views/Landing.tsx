@@ -2,15 +2,15 @@ import { useState } from "react";
 import {
   Compass,
   Search,
-  PenTool,
   Code2,
   ShieldCheck,
   Gavel,
+  Bug,
+  Eye,
   ArrowRight,
   Sparkles,
   GitBranch,
   GitPullRequest,
-  Eye,
   CheckCircle2,
   Lock,
 } from "lucide-react";
@@ -20,10 +20,12 @@ import { startAnalysis } from "../lib/api";
 const AGENT_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   Compass,
   Search,
-  PenTool,
+  Bug,
+  Gavel,
+  Eye,
   Code2,
   ShieldCheck,
-  Gavel,
+  GitPullRequest,
 };
 
 const EXAMPLES = [
@@ -66,7 +68,7 @@ export function Landing({ onStart }: { onStart: (runId: string) => void }) {
         <div className="mx-auto max-w-3xl text-center">
           <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-1.5 text-xs font-medium text-ink-200 animate-fade-up">
             <Sparkles className="h-3.5 w-3.5 text-brand-400" />
-            Six AI agents · LangGraph orchestration · Gemini reasoning
+            Eight AI agents · LangGraph orchestration · Gemini reasoning
           </div>
           <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-6xl animate-fade-up">
             Turn any public repo into a{" "}
@@ -216,23 +218,27 @@ export function Landing({ onStart }: { onStart: (runId: string) => void }) {
 }
 
 const AGENT_DESCRIPTIONS: Record<string, string> = {
-  repository_analyst:
-    "Reads the project structure, frameworks, dependencies, and coding conventions to build a mental model of the codebase.",
-  issue_hunter:
-    "Scans for bugs, TODOs, code smells, duplicated logic, missing tests, security risks, and beginner-friendly opportunities.",
-  solution_architect:
-    "Proposes one or more implementation strategies per issue — with trade-offs, complexity, risk, and confidence scores.",
-  code_engineer:
-    "Generates production-quality code as a git-style diff, matching the repository's existing style. Two independent implementations for important issues.",
-  qa_agent:
-    "Reviews generated code for regressions and writes unit and integration tests that match the repo's testing conventions.",
-  reviewer:
-    "Compares all proposals, scores each on quality and risk, selects the best implementation, and justifies the choice.",
+  intake:
+    "Validates the GitHub URL, checks your PAT scopes (repo + workflow), and fetches repo metadata — fails fast if anything is wrong.",
+  repo_analysis:
+    "Clones the repo structure, indexes key files, and builds a full architectural map: frameworks, dependencies, conventions, and quality signals.",
+  issue_discovery:
+    "Scans for bugs, TODOs, code smells, duplicated logic, missing tests, and security risks. Also checks for labeled GitHub issues.",
+  ranking:
+    "Scores every candidate issue on impact, difficulty, acceptance likelihood, and alignment with contribution guidelines — produces a ranked shortlist.",
+  human_checkpoint:
+    "Pauses the pipeline and presents you with the ranked issue list. You pick which issue to fix before code generation begins.",
+  code_generation:
+    "Writes the actual fix as a unified diff, following the repository's existing code style and conventions exactly.",
+  code_review:
+    "AI-powered code review — checks correctness, style, and regressions. Generates test code. Does NOT execute the target repo's test suite.",
+  pr_agent:
+    "Checks if you already have a fork, creates one if needed, branches, commits your approved changes, and opens a pull request.",
 };
 
 const STEPS = [
   { title: "Paste a repo URL", desc: "Any public GitHub repository. No login required to start." },
-  { title: "Watch agents work", desc: "Live timeline of every agent step, with outputs and timings." },
-  { title: "Review the diffs", desc: "Approve or reject changes per file or per hunk. You're in control." },
-  { title: "Create a PR", desc: "Only then does RepoPilot request GitHub access and open a pull request." },
+  { title: "Watch 8 agents work", desc: "Live timeline of every agent step, with outputs and timings." },
+  { title: "Select & approve", desc: "Pick an issue from the ranked list, then review the generated diff before it touches GitHub." },
+  { title: "Auto PR on approval", desc: "Approve the diff and RepoPilot forks, commits, and opens a pull request automatically." },
 ];

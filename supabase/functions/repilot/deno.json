@@ -1,0 +1,14 @@
+{
+  "imports": {
+    "@langchain/langgraph": "npm:@langchain/langgraph",
+    "@langchain/langgraph-checkpoint-postgres": "npm:@langchain/langgraph-checkpoint-postgres",
+    "@langchain/google-genai": "npm:@langchain/google-genai",
+    "@langchain/core": "npm:@langchain/core",
+    "@supabase/supabase-js": "npm:@supabase/supabase-js@2.57.4",
+    "pg": "npm:pg"
+  },
+  "tasks": {
+    "test": "deno test --allow-env --allow-net --allow-read",
+    "test:watch": "deno test --allow-env --allow-net --allow-read --watch"
+  }
+}

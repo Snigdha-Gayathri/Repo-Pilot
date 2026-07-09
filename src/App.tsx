@@ -85,7 +85,7 @@ export default function App() {
 
       <footer className="border-t border-white/[0.06] py-8">
         <div className="mx-auto max-w-7xl px-4 text-center text-xs text-ink-400 sm:px-6">
-          RepoPilot AI — six AI agents, one reviewed pull request. Powered by Gemini &amp; LangGraph-style orchestration.
+          RepoPilot AI — eight AI agents, one reviewed pull request. Powered by LangGraph &amp; Gemini.
         </div>
       </footer>
     </div>

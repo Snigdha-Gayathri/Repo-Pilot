@@ -1,0 +1,10 @@
+{
+  "devDependencies": {
+    "@jsr/std__assert": "^1.0.19",
+    "@langchain/core": "^1.2.2",
+    "@langchain/google-genai": "^2.2.0",
+    "@langchain/langgraph": "^1.4.7",
+    "@supabase/supabase-js": "^2.110.2",
+    "pg": "^8.22.0"
+  }
+}

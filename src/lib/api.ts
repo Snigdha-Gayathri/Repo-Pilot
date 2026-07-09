@@ -1,12 +1,12 @@
 import { supabase, EDGE_URL } from "./supabase";
-import type { AnalysisRun, AgentEvent, Issue, Proposal } from "./types";
+import type { AnalysisRun, AgentEvent, Issue, Proposal, GraphState, ResumeCommand } from "./types";
 
 const headers = () => ({
   "Content-Type": "application/json",
   Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
 });
 
-/** Kick off a new analysis run. Returns the run id; progress is streamed via realtime. */
+/** Kick off a new analysis run. Progress is streamed via realtime. */
 export async function startAnalysis(repoUrl: string): Promise<string> {
   const { data, error } = await supabase
     .from("analysis_runs")
@@ -26,6 +26,39 @@ export async function startAnalysis(repoUrl: string): Promise<string> {
     throw new Error(`Failed to start analysis: ${txt}`);
   }
   return runId;
+}
+
+/**
+ * Resume a paused graph execution after a human-in-the-loop checkpoint.
+ * This is called when the user selects an issue or approves a diff.
+ */
+export async function resumeAnalysis(
+  runId: string,
+  command: ResumeCommand,
+): Promise<GraphState> {
+  const res = await fetch(`${EDGE_URL}?action=resume`, {
+    method: "POST",
+    headers: headers(),
+    body: JSON.stringify({ run_id: runId, command }),
+  });
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error(`Failed to resume: ${txt}`);
+  }
+  const data = await res.json();
+  return data as GraphState;
+}
+
+/**
+ * Check the current graph state (useful after reloading the page).
+ */
+export async function getGraphState(runId: string): Promise<GraphState> {
+  const res = await fetch(`${EDGE_URL}?action=status&run_id=${runId}`, {
+    headers: headers(),
+  });
+  if (!res.ok) throw new Error("Failed to get graph state");
+  const data = await res.json();
+  return data as GraphState;
 }
 
 export async function fetchRun(runId: string): Promise<AnalysisRun | null> {
@@ -64,10 +97,10 @@ export async function fetchProposals(runId: string): Promise<Proposal[]> {
   return (data ?? []) as Proposal[];
 }
 
-/** Subscribe to live inserts/updates on agent_events for a run. Returns unsubscribe. */
+/** Subscribe to live inserts/updates on agent_events for a run. */
 export function subscribeEvents(
   runId: string,
-  onChange: (events: AgentEvent[]) => void
+  onChange: (events: AgentEvent[]) => void,
 ): () => void {
   let latest: AgentEvent[] = [];
   const channel = supabase
@@ -78,7 +111,7 @@ export function subscribeEvents(
       async () => {
         latest = await fetchEvents(runId);
         onChange(latest);
-      }
+      },
     )
     .on(
       "postgres_changes",
@@ -86,7 +119,7 @@ export function subscribeEvents(
       async () => {
         latest = await fetchEvents(runId);
         onChange(latest);
-      }
+      },
     )
     .subscribe();
   return () => {
@@ -96,7 +129,7 @@ export function subscribeEvents(
 
 export function subscribeRun(
   runId: string,
-  onChange: (run: AnalysisRun | null) => void
+  onChange: (run: AnalysisRun | null) => void,
 ): () => void {
   const channel = supabase
     .channel(`run-${runId}`)
@@ -105,7 +138,7 @@ export function subscribeRun(
       { event: "*", schema: "public", table: "analysis_runs", filter: `id=eq.${runId}` },
       async () => {
         onChange(await fetchRun(runId));
-      }
+      },
     )
     .subscribe();
   return () => {
@@ -115,7 +148,7 @@ export function subscribeRun(
 
 export function subscribeIssues(
   runId: string,
-  onChange: (issues: Issue[]) => void
+  onChange: (issues: Issue[]) => void,
 ): () => void {
   const channel = supabase
     .channel(`issues-${runId}`)
@@ -124,14 +157,14 @@ export function subscribeIssues(
       { event: "*", schema: "public", table: "issues", filter: `run_id=eq.${runId}` },
       async () => {
         onChange(await fetchIssues(runId));
-      }
+      },
     )
     .on(
       "postgres_changes",
       { event: "*", schema: "public", table: "proposals", filter: `run_id=eq.${runId}` },
       async () => {
         onChange(await fetchIssues(runId));
-      }
+      },
     )
     .subscribe();
   return () => {
@@ -139,11 +172,12 @@ export function subscribeIssues(
   };
 }
 
-/** Start the GitHub OAuth flow. Returns the URL to redirect the user to. */
+/** Start the GitHub OAuth flow — kept for backward compatibility but PAT is now the primary method. */
 export async function startGithubOAuth(redirectUri: string): Promise<string> {
-  const res = await fetch(`${EDGE_URL}?action=github_oauth_start&redirect_uri=${encodeURIComponent(redirectUri)}`, {
-    headers: headers(),
-  });
+  const res = await fetch(
+    `${EDGE_URL}?action=github_oauth_start&redirect_uri=${encodeURIComponent(redirectUri)}`,
+    { headers: headers() },
+  );
   if (!res.ok) throw new Error("GitHub OAuth not configured");
   const data = await res.json();
   return data.auth_url as string;
@@ -153,7 +187,7 @@ export async function startGithubOAuth(redirectUri: string): Promise<string> {
 export async function completeGithubOAuth(
   code: string,
   runId: string,
-  approvedFiles: { path: string; content: string }[]
+  approvedFiles: { path: string; content: string }[],
 ): Promise<{ pr_url?: string; error?: string; user?: { login: string } }> {
   const res = await fetch(`${EDGE_URL}?action=github_oauth_callback`, {
     method: "POST",

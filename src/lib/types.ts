@@ -1,32 +1,87 @@
-// Shared domain types for RepoPilot AI.
+// Shared domain types for RepoPilot AI + LangGraph multi-agent system.
+// Matches the backend types in supabase/functions/repilot/types.ts
 
 export type AgentName =
-  | "repository_analyst"
-  | "issue_hunter"
-  | "solution_architect"
-  | "code_engineer"
-  | "qa_agent"
-  | "reviewer";
+  | "intake"
+  | "repo_analysis"
+  | "issue_discovery"
+  | "ranking"
+  | "human_checkpoint"
+  | "code_generation"
+  | "code_review"
+  | "pr_agent";
 
 export const AGENT_META: Record<
   AgentName,
-  { label: string; short: string; color: string; icon: string }
+  { label: string; short: string; color: string; icon: string; description: string }
 > = {
-  repository_analyst: { label: "Repository Analyst", short: "Analyst", color: "brand", icon: "Compass" },
-  issue_hunter: { label: "Issue Hunter", short: "Hunter", color: "amber", icon: "Search" },
-  solution_architect: { label: "Solution Architect", short: "Architect", color: "emerald", icon: "PenTool" },
-  code_engineer: { label: "Code Engineer", short: "Engineer", color: "brand", icon: "Code2" },
-  qa_agent: { label: "QA Agent", short: "QA", color: "amber", icon: "ShieldCheck" },
-  reviewer: { label: "Reviewer", short: "Reviewer", color: "emerald", icon: "Gavel" },
+  intake: {
+    label: "Intake Agent",
+    short: "Intake",
+    color: "brand",
+    icon: "Compass",
+    description: "Validates URL, checks GitHub token scopes, fetches repo metadata",
+  },
+  repo_analysis: {
+    label: "Repo Analysis",
+    short: "Analysis",
+    color: "brand",
+    icon: "Search",
+    description: "Clones/indexes repo, builds structural map, analyzes conventions",
+  },
+  issue_discovery: {
+    label: "Issue Discovery",
+    short: "Issues",
+    color: "amber",
+    icon: "Bug",
+    description: "Finds bugs, TODOs, labeled GitHub issues, code smells, security risks",
+  },
+  ranking: {
+    label: "Ranking Agent",
+    short: "Ranking",
+    color: "emerald",
+    icon: "Gavel",
+    description: "Scores issues by impact, difficulty, and acceptance likelihood",
+  },
+  human_checkpoint: {
+    label: "Human Checkpoint",
+    short: "You",
+    color: "amber",
+    icon: "Eye",
+    description: "Pauses for your input — select an issue, review & approve the diff",
+  },
+  code_generation: {
+    label: "Code Generation",
+    short: "Engineer",
+    color: "brand",
+    icon: "Code2",
+    description: "Writes the fix as a unified diff following repo conventions",
+  },
+  code_review: {
+    label: "Code Review",
+    short: "Review",
+    color: "emerald",
+    icon: "ShieldCheck",
+    description: "AI-powered review of correctness & style. Does NOT execute tests.",
+  },
+  pr_agent: {
+    label: "Pull Request",
+    short: "PR",
+    color: "brand",
+    icon: "GitPullRequest",
+    description: "Forks repo (or uses existing fork), branches, commits, opens PR",
+  },
 };
 
 export const AGENT_ORDER: AgentName[] = [
-  "repository_analyst",
-  "issue_hunter",
-  "solution_architect",
-  "code_engineer",
-  "qa_agent",
-  "reviewer",
+  "intake",
+  "repo_analysis",
+  "issue_discovery",
+  "ranking",
+  "human_checkpoint",
+  "code_generation",
+  "code_review",
+  "pr_agent",
 ];
 
 export interface AnalysisRun {
@@ -34,7 +89,7 @@ export interface AnalysisRun {
   repo_url: string;
   repo_full_name: string | null;
   default_branch: string | null;
-  status: "pending" | "analyzing" | "completed" | "error";
+  status: "pending" | "indexing" | "analyzing" | "awaiting_selection" | "generating" | "awaiting_approval" | "completed" | "error";
   summary: RepoSummary | null;
   error: string | null;
   created_at: string;
@@ -55,6 +110,13 @@ export interface RepoSummary {
   };
   entryPoints?: string[];
   techStack?: string[];
+  qualitySignals?: {
+    hasTests: boolean;
+    testFramework: string | null;
+    hasCi: boolean;
+    hasLintConfig: boolean;
+    readmeQuality: "none" | "minimal" | "good" | "excellent";
+  };
 }
 
 export interface AgentEvent {
@@ -142,6 +204,48 @@ export interface PrRequest {
   status: string;
   error: string | null;
   approved_files: { path: string; content: string }[];
+}
+
+// ── New types for checkpoint/resume flow ──
+
+export interface GraphState {
+  runId: string;
+  repoUrl: string;
+  status: string;
+  error: string | null;
+  rankedIssues?: RankedIssue[];
+  generatedDiff?: string | null;
+  diffApproved?: boolean | null;
+  prResult?: { prUrl: string | null; error: string | null } | null;
+}
+
+export interface RankedIssue {
+  rank: number;
+  issue: {
+    title: string;
+    description: string;
+    category: string;
+    severity: string;
+    confidence: number;
+    filesAffected: string[];
+    estimatedEffort: string;
+    isImportant: boolean;
+    githubIssueUrl?: string;
+  };
+  scores: {
+    impact: number;
+    difficulty: number;
+    acceptanceLikelihood: number;
+    alignmentWithGuidelines: number;
+  };
+  overallScore: number;
+  rationale: string;
+}
+
+export interface ResumeCommand {
+  selectedIndex?: number;
+  approved?: boolean;
+  cancelled?: boolean;
 }
 
 export type Severity = "critical" | "high" | "medium" | "low";
